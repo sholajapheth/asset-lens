@@ -3,6 +3,7 @@ name: Publish Extension
 # Release process: bump "version" in package.json + CHANGELOG, commit, then tag and push:
 #   git tag v0.1.2 && git push origin v0.1.2
 # The tag (without leading v) must exactly match package.json version or this workflow fails.
+# --skip-duplicate on publish: re-runs or split failures (VSCE ok, Open VSX not) do not fail the job.
 
 on:
   push:
@@ -48,12 +49,12 @@ jobs:
         run: npx @vscode/vsce package --no-dependencies
 
       - name: Publish to VS Code Marketplace
-        run: npx @vscode/vsce publish --no-dependencies
+        run: npx @vscode/vsce publish --no-dependencies --skip-duplicate
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX Registry
-        run: npx ovsx publish *.vsix
+        run: npx ovsx publish *.vsix --skip-duplicate
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
