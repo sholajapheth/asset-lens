@@ -2,7 +2,7 @@
   "name": "asset-lens",
   "displayName": "Asset Lens",
   "description": "Visual asset browser for VS Code — browse thumbnails, track index.ts sync status, and detect unused assets without leaving your editor.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "sholajapheth",
   "license": "MIT",
   "repository": {
@@ -27,7 +27,7 @@
   ],
   "categories": ["Other"],
   "galleryBanner": {
-    "color": "#0d0d11",
+    "color": "#121b21",
     "theme": "dark"
   },
   "icon": "media/icon.png",
@@ -73,7 +73,7 @@
         {
           "id": "asset-lens",
           "title": "Asset Lens",
-          "icon": "media/icon.svg"
+          "icon": "media/icon.png"
         }
       ]
     },
@@ -96,7 +96,9 @@
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
     "publish:ovsx": "npx ovsx publish *.vsix",
     "publish:all": "npm run package && npm run publish:vsce && npm run publish:ovsx",
-    "release": "npm run generate-icon && npm run compile && npm run publish:all"
+    "release": "npm run generate-icon && npm run compile && npm run publish:all",
+    "release:ovsx": "npm run package && npx ovsx publish *.vsix",
+    "ovsx:create-namespace": "npx ovsx create-namespace sholajapheth"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.1] - 2026-04-02
+
+### Changed
+
+- New extension icon (marketplace and activity bar) and gallery banner color aligned with the Asset Lens logo.
+
 ## [0.1.0] - 2026-04-02
 
 ### Added
