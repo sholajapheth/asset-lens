@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.2] - 2026-04-02
+
+### Fixed
+
+- CI publish: use Node.js 20 in GitHub Actions so `vsce` / `undici` no longer hit `ReferenceError: File is not defined` on Node 18.
+
+### Changed
+
+- Release workflow: fail fast if the git tag does not match `package.json` `version` (e.g. tag `v0.1.2` requires `"version": "0.1.2"`).
+
 ## [0.1.1] - 2026-04-02
 
 ### Changed

@@ -1,9 +1,13 @@
 name: Publish Extension
 
+# Release process: bump "version" in package.json + CHANGELOG, commit, then tag and push:
+#   git tag v0.1.2 && git push origin v0.1.2
+# The tag (without leading v) must exactly match package.json version or this workflow fails.
+
 on:
   push:
     tags:
-      - 'v*' # triggers on tags like v0.1.0, v1.0.0, etc.
+      - 'v*'
 
 jobs:
   publish:
@@ -18,7 +22,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: npm
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VER=$(node -p "require('./package.json').version")
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VER" != "$TAG_VER" ]; then
+            echo "::error::Mismatch: package.json version is ${PKG_VER} but tag is ${GITHUB_REF_NAME}. Bump version and use tag v${PKG_VER}, or fix package.json to match the tag."
+            exit 1
+          fi
+          echo "Publishing version ${PKG_VER} (tag ${GITHUB_REF_NAME})"
 
       - name: Install dependencies
         run: npm ci

@@ -2,7 +2,7 @@
   "name": "asset-lens",
   "displayName": "Asset Lens",
   "description": "Visual asset browser for VS Code — browse thumbnails, track index.ts sync status, and detect unused assets without leaving your editor.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "sholajapheth",
   "license": "MIT",
   "repository": {
@@ -103,6 +103,7 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.2",
     "ovsx": "^0.10.0",
     "sharp": "^0.33.5",
     "typescript": "^5.3.3"
