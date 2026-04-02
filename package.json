@@ -1,16 +1,40 @@
 {
   "name": "asset-lens",
   "displayName": "Asset Lens",
-  "description": "Browse workspace assets, barrel index.ts export status, usage hints, and import paths from the side bar.",
-  "version": "0.2.0",
-  "publisher": "local",
+  "description": "Visual asset browser for VS Code — browse thumbnails, track index.ts sync status, and detect unused assets without leaving your editor.",
+  "version": "0.1.0",
+  "publisher": "sholajapheth",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sholajapheth/asset-lens"
+  },
+  "homepage": "https://github.com/sholajapheth/asset-lens#readme",
+  "bugs": {
+    "url": "https://github.com/sholajapheth/asset-lens/issues"
+  },
+  "keywords": [
+    "assets",
+    "images",
+    "icons",
+    "gallery",
+    "design system",
+    "barrel exports",
+    "index.ts",
+    "unused files",
+    "react native",
+    "expo"
+  ],
+  "categories": ["Other"],
+  "galleryBanner": {
+    "color": "#0d0d11",
+    "theme": "dark"
+  },
+  "icon": "media/icon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -64,13 +88,21 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile",
+    "generate-icon": "node scripts/generate-icon.js",
+    "package": "npx @vscode/vsce package --no-dependencies",
+    "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
+    "publish:ovsx": "npx ovsx publish *.vsix",
+    "publish:all": "npm run package && npm run publish:vsce && npm run publish:ovsx",
+    "release": "npm run generate-icon && npm run compile && npm run publish:all"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/vscode": "^1.85.0",
+    "ovsx": "^0.10.0",
+    "sharp": "^0.33.5",
     "typescript": "^5.3.3"
   }
 }
