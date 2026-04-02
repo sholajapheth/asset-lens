@@ -1,0 +1,76 @@
+{
+  "name": "asset-lens",
+  "displayName": "Asset Lens",
+  "description": "Browse workspace assets, barrel index.ts export status, usage hints, and import paths from the side bar.",
+  "version": "0.2.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Asset Lens",
+      "properties": {
+        "assetLens.assetRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Optional: limit discovery to this folder (relative to each workspace root or absolute). When empty, Asset Lens indexes asset files across the entire workspace (excluding node_modules, dist, etc.), grouped by parent folder."
+        },
+        "assetLens.importPrefix": {
+          "type": "string",
+          "default": "",
+          "description": "Optional import path prefix for barrel folders (e.g. @/assets). When empty, tsconfig paths and src/ → @/ heuristics are used."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "assetLens.refresh",
+        "title": "Refresh Asset Lens",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "assetLens.refresh",
+          "when": "view == assetLens.gallery",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "asset-lens",
+          "title": "Asset Lens",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "asset-lens": [
+        {
+          "type": "webview",
+          "id": "assetLens.gallery",
+          "name": "Gallery"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  }
+}
