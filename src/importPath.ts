@@ -2,8 +2,111 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 
+function stripJsonCommentsAndTrailingCommas(input: string): string {
+  // Pass 1: strip comments while preserving string literals.
+  let noComments = "";
+  let i = 0;
+  let inString = false;
+  let escaped = false;
+
+  while (i < input.length) {
+    const ch = input[i];
+    const next = input[i + 1];
+
+    if (inString) {
+      noComments += ch;
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      noComments += ch;
+      i += 1;
+      continue;
+    }
+
+    if (ch === "/" && next === "/") {
+      i += 2;
+      while (i < input.length && input[i] !== "\n") {
+        i += 1;
+      }
+      continue;
+    }
+
+    if (ch === "/" && next === "*") {
+      i += 2;
+      while (
+        i + 1 < input.length &&
+        !(input[i] === "*" && input[i + 1] === "/")
+      ) {
+        i += 1;
+      }
+      i += 2;
+      continue;
+    }
+
+    noComments += ch;
+    i += 1;
+  }
+
+  // Pass 2: strip trailing commas before ] or } while preserving string literals.
+  let out = "";
+  i = 0;
+  inString = false;
+  escaped = false;
+
+  while (i < noComments.length) {
+    const ch = noComments[i];
+
+    if (inString) {
+      out += ch;
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      out += ch;
+      i += 1;
+      continue;
+    }
+
+    if (ch === ",") {
+      let j = i + 1;
+      while (j < noComments.length && /\s/.test(noComments[j])) {
+        j += 1;
+      }
+      const ahead = noComments[j];
+      if (ahead === "]" || ahead === "}") {
+        i += 1;
+        continue;
+      }
+    }
+
+    out += ch;
+    i += 1;
+  }
+
+  return out;
+}
+
 function tryReadTsconfigPaths(
-  workspaceRoot: string
+  workspaceRoot: string,
 ): Record<string, string[]> | null {
   const candidates = ["tsconfig.json", "jsconfig.json"];
   for (const c of candidates) {
@@ -13,7 +116,13 @@ function tryReadTsconfigPaths(
     }
     try {
       const raw = fs.readFileSync(p, "utf8");
-      const j = JSON.parse(raw) as {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = JSON.parse(stripJsonCommentsAndTrailingCommas(raw));
+      }
+      const j = parsed as {
         compilerOptions?: { paths?: Record<string, string[]> };
       };
       const paths = j.compilerOptions?.paths;
@@ -47,11 +156,11 @@ function segmentAfterAssetsFolder(folderAbsPath: string): string | null {
  */
 export function computeImportModuleSpecifier(
   workspaceFolder: vscode.WorkspaceFolder,
-  folderAbsPath: string
+  folderAbsPath: string,
 ): string {
   const cfg = vscode.workspace.getConfiguration(
     "assetLens",
-    workspaceFolder.uri
+    workspaceFolder.uri,
   );
   const manual = cfg.get<string | undefined>("importPrefix")?.trim();
   if (manual) {

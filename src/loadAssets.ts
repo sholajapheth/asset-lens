@@ -4,26 +4,30 @@ import * as vscode from "vscode";
 import { loadBarrelMapForFolder } from "./parseBarrel";
 import type { WebviewAsset, WebviewFolder } from "./types";
 
-export const GLOB_ASSETS =
-  "**/*.{png,jpg,jpeg,gif,webp,bmp,ico,avif,heic,svg,ai,eps,pdf,mp4,webm,mov,mkv,avi,m4v,ogv,woff,woff2,ttf,otf,eot,ts}";
-
-const EXCLUDE =
-  "{**/node_modules/**,**/.git/**,**/dist/**,**/build/**,**/out/**,**/.next/**,**/coverage/**}";
-
-const MAX_ASSETS = 2000;
-
 const IMAGE_EXT = new Set([
   "png",
   "jpg",
   "jpeg",
+  "jpe",
+  "jfif",
+  "pjpeg",
+  "pjp",
   "gif",
   "webp",
+  "apng",
   "bmp",
+  "dib",
   "ico",
+  "cur",
+  "icns",
   "avif",
   "heic",
+  "heif",
+  "tif",
+  "tiff",
+  "jxl",
 ]);
-const VECTOR_EXT = new Set(["svg", "ai", "eps", "pdf"]);
+const VECTOR_EXT = new Set(["svg", "svgz", "ai", "eps", "pdf"]);
 const VIDEO_EXT = new Set([
   "mp4",
   "webm",
@@ -32,31 +36,74 @@ const VIDEO_EXT = new Set([
   "avi",
   "m4v",
   "ogv",
+  "3gp",
+  "3g2",
+  "mpg",
+  "mpeg",
+  "mts",
+  "m2ts",
+  "wmv",
 ]);
-const FONT_EXT = new Set(["woff", "woff2", "ttf", "otf", "eot"]);
+const FONT_EXT = new Set([
+  "woff",
+  "woff2",
+  "ttf",
+  "otf",
+  "eot",
+  "ttc",
+  "otc",
+  "pfb",
+  "pfm",
+]);
+const AUDIO_EXT = new Set([
+  "mp3",
+  "wav",
+  "ogg",
+  "oga",
+  "m4a",
+  "aac",
+  "flac",
+  "aif",
+  "aiff",
+  "opus",
+  "weba",
+]);
+
+const ASSET_EXTENSIONS = [
+  ...IMAGE_EXT,
+  ...VECTOR_EXT,
+  ...VIDEO_EXT,
+  ...FONT_EXT,
+  ...AUDIO_EXT,
+];
+const ASSET_EXT_SET = new Set(ASSET_EXTENSIONS);
+
+export const GLOB_ASSETS = `**/*.{${ASSET_EXTENSIONS.join(",")}}`;
+
+const EXCLUDE =
+  "{**/node_modules/**,**/.git/**,**/dist/**,**/build/**,**/out/**,**/.next/**,**/coverage/**}";
+
+const MAX_ASSETS = 2000;
+
+function extLowerFromPath(absPath: string): string {
+  return path.extname(absPath).slice(1).toLowerCase();
+}
+
+function isAllowedAssetPath(absPath: string): boolean {
+  const ext = extLowerFromPath(absPath);
+  return !!ext && ASSET_EXT_SET.has(ext);
+}
 
 /** Used by webview filters: image tab = image|gif, vector tab = vector, video tab = video */
 function classifyType(ext: string): string {
   const e = ext.toLowerCase();
-  if (e === "ts") {
-    return "base64";
-  }
   if (e === "gif") {
     return "gif";
   }
-  if (
-    e === "png" ||
-    e === "jpg" ||
-    e === "jpeg" ||
-    e === "webp" ||
-    e === "bmp" ||
-    e === "ico" ||
-    e === "avif" ||
-    e === "heic"
-  ) {
+  if (IMAGE_EXT.has(e)) {
     return "image";
   }
-  if (e === "svg" || VECTOR_EXT.has(e)) {
+  if (VECTOR_EXT.has(e)) {
     return "vector";
   }
   if (VIDEO_EXT.has(e)) {
@@ -69,7 +116,7 @@ function classifyType(ext: string): string {
 }
 
 async function collectAssetUris(
-  scopeUris: vscode.Uri[] | null
+  scopeUris: vscode.Uri[] | null,
 ): Promise<vscode.Uri[]> {
   if (!scopeUris?.length) {
     return vscode.workspace.findFiles(GLOB_ASSETS, EXCLUDE, MAX_ASSETS);
@@ -80,7 +127,7 @@ async function collectAssetUris(
     const batch = await vscode.workspace.findFiles(
       new vscode.RelativePattern(root, GLOB_ASSETS),
       EXCLUDE,
-      MAX_ASSETS
+      MAX_ASSETS,
     );
     for (const u of batch) {
       const k = u.fsPath;
@@ -95,15 +142,25 @@ async function collectAssetUris(
 
 export async function buildAssetFolders(
   webview: vscode.Webview,
-  scopeUris: vscode.Uri[] | null
+  scopeUris: vscode.Uri[] | null,
 ): Promise<WebviewFolder[]> {
   const uris = await collectAssetUris(scopeUris);
   const files = uris
     .map((u) => u.fsPath)
-    .filter((p) => path.basename(p) !== "index.ts");
+    .filter((p) => isAllowedAssetPath(p))
+    .filter((p) => {
+      try {
+        return fs.statSync(p).isFile();
+      } catch {
+        return false;
+      }
+    });
   files.sort((a, b) => a.localeCompare(b));
 
-  const barrelCache = new Map<string, ReturnType<typeof loadBarrelMapForFolder>>();
+  const barrelCache = new Map<
+    string,
+    ReturnType<typeof loadBarrelMapForFolder>
+  >();
 
   const byFolder = new Map<string, WebviewAsset[]>();
 
@@ -162,8 +219,7 @@ export async function buildAssetFolders(
     assets.sort((a, b) => a.name.localeCompare(b.name));
     const folderUri = vscode.Uri.file(abs);
     const label =
-      vscode.workspace.asRelativePath(folderUri, false) ||
-      path.basename(abs);
+      vscode.workspace.asRelativePath(folderUri, false) || path.basename(abs);
     folders.push({
       name: label,
       absolutePath: abs,
