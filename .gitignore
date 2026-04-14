@@ -1,3 +1,12 @@
-node_modules
-out
+node_modules/
+out/
+coverage/
+
+# VS Code packaging output
 *.vsix
+
+# Local editor/project settings
+.vscode/
+
+# macOS
+.DS_Store

@@ -37,16 +37,12 @@ Use the **search** field and **Type** / **status** controls in the Gallery toolb
 
 ## Commands
 
-| Command | Description |
-|--------|-------------|
-| **Refresh Asset Lens** | Reloads the asset index and gallery (`assetLens.refresh`). Available from the Command Palette and from the refresh button on the Gallery view title bar. |
+- **Refresh Asset Lens** (`assetLens.refresh`) — Reloads the asset index and gallery. Available from the Command Palette and from the refresh button on the Gallery view title bar.
 
 ## Settings
 
-| Setting | Default | Description |
-|--------|---------|-------------|
-| `assetLens.assetRoot` | *(empty)* | Optional. Limit discovery to this folder (path relative to each workspace root, or absolute). If empty, assets are discovered across the workspace (still excluding ignored build/vendor paths). |
-| `assetLens.importPrefix` | *(empty)* | Optional import prefix for barrel imports (e.g. `@/assets`). If empty, Asset Lens uses `tsconfig` path mappings and common `src/` → `@/` heuristics. |
+- `assetLens.assetRoot` (default: _(empty)_) — Optional. Limit discovery to this folder (path relative to each workspace root, or absolute). If empty, assets are discovered across the workspace (still excluding ignored build/vendor paths).
+- `assetLens.importPrefix` (default: _(empty)_) — Optional import prefix for barrel imports (e.g. `@/assets`). If empty, Asset Lens uses `tsconfig` path mappings and common `src/` → `@/` heuristics.
 
 Open **Settings** and search for `Asset Lens`, or add keys under your `settings.json`:
 
@@ -64,14 +60,22 @@ Asset Lens indexes many common extensions, including:
 - **Raster & icons:** PNG, JPG, WebP, GIF, ICO, BMP, AVIF, HEIC, …
 - **Vector & docs:** SVG, PDF, AI, EPS
 - **Video:** MP4, WebM, MOV, MKV, AVI, …
+- **Audio:** MP3, WAV, OGG, M4A, AAC, FLAC, OPUS, …
 - **Fonts:** WOFF, WOFF2, TTF, OTF, EOT
-- **Barrel-related `.ts` files** in asset trees (for base64 / TS-based asset patterns)
 
 Up to **2000** assets are indexed per workspace (see `loadAssets` limits).
 
 ## Requirements
 
 - **VS Code** (or compatible editor) **1.85** or newer.
+
+## Development
+
+- Run tests: `npm test`
+- Watch tests: `npm run test:watch`
+- Generate coverage report: `npm run test:coverage`
+
+Coverage output is written to `coverage/` (HTML + lcov + text summary).
 
 ## Contributing
 

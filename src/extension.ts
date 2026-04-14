@@ -21,26 +21,28 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidCreateFiles(debounced),
     vscode.workspace.onDidDeleteFiles(debounced),
-    vscode.workspace.onDidRenameFiles(debounced)
+    vscode.workspace.onDidRenameFiles(debounced),
   );
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((doc) => {
       if (path.basename(doc.fileName) === "index.ts") {
         debounced();
       }
-    })
+    }),
   );
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       AssetLensViewProvider.viewType,
       provider,
-      { webviewOptions: { retainContextWhenHidden: true } }
-    )
+      { webviewOptions: { retainContextWhenHidden: true } },
+    ),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("assetLens.refresh", () => provider.refresh())
+    vscode.commands.registerCommand("assetLens.refresh", () =>
+      provider.refresh(),
+    ),
   );
 
   context.subscriptions.push(
@@ -48,11 +50,11 @@ export function activate(context: vscode.ExtensionContext) {
       if (e.affectsConfiguration("assetLens")) {
         provider.refresh();
       }
-    })
+    }),
   );
 
   context.subscriptions.push(
-    vscode.workspace.onDidChangeWorkspaceFolders(() => provider.refresh())
+    vscode.workspace.onDidChangeWorkspaceFolders(() => provider.refresh()),
   );
 }
 
@@ -84,13 +86,13 @@ class AssetLensViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = getShellHtml(webviewView.webview.cspSource);
 
     webviewView.webview.onDidReceiveMessage((msg: WebviewToExt) =>
-      this._onMessage(webviewView.webview, msg)
+      this._onMessage(webviewView.webview, msg),
     );
   }
 
   private async _onMessage(
     webview: vscode.Webview,
-    msg: WebviewToExt
+    msg: WebviewToExt,
   ): Promise<void> {
     switch (msg.command) {
       case "ready":
@@ -100,7 +102,7 @@ class AssetLensViewProvider implements vscode.WebviewViewProvider {
       case "getUsages": {
         const usages = await findUsagesForExportNames(
           this._barrelSkip,
-          msg.exportNames
+          msg.exportNames,
         );
         const usageCount = uniqueFileCount(usages);
         webview.postMessage({
@@ -113,15 +115,11 @@ class AssetLensViewProvider implements vscode.WebviewViewProvider {
       }
       case "addToIndex": {
         try {
-          await addToIndexLine(
-            msg.folderAbsPath,
-            msg.nameWithoutExt,
-            msg.ext
-          );
+          await addToIndexLine(msg.folderAbsPath, msg.nameWithoutExt, msg.ext);
           vscode.window.showInformationMessage("Added export to index.ts.");
         } catch (e) {
           vscode.window.showErrorMessage(
-            `Could not update index.ts: ${String(e)}`
+            `Could not update index.ts: ${String(e)}`,
           );
         }
         await this._loadAndPush();
@@ -185,10 +183,9 @@ class AssetLensViewProvider implements vscode.WebviewViewProvider {
     const flatFolders = await buildAssetFolders(webview, scopeUris);
 
     if (!flatFolders.length) {
-      const hint =
-        scopeUris?.length
-          ? "No asset files found under the configured assetLens.assetRoot path."
-          : "No asset files found in the workspace (images, SVGs, videos, fonts, etc.).";
+      const hint = scopeUris?.length
+        ? "No asset files found under the configured assetLens.assetRoot path."
+        : "No asset files found in the workspace (images, SVGs, videos, fonts, etc.).";
       webview.postMessage({
         command: "error",
         message: `${hint} Add files or adjust assetLens.assetRoot in settings.`,
@@ -239,7 +236,7 @@ class AssetLensViewProvider implements vscode.WebviewViewProvider {
 async function addToIndexLine(
   folderAbsPath: string,
   nameWithoutExt: string,
-  ext: string
+  ext: string,
 ): Promise<void> {
   const indexPath = path.join(folderAbsPath, "index.ts");
   const extLower = ext.toLowerCase();
@@ -248,17 +245,39 @@ async function addToIndexLine(
     extLower === "ts"
       ? `export * from './${nameWithoutExt}';`
       : `export { default as ${toPascalCase(
-          nameWithoutExt
+          nameWithoutExt,
         )} } from './${fileName}';`;
 
   let prev = "";
   if (fs.existsSync(indexPath)) {
     prev = fs.readFileSync(indexPath, "utf8");
+
+    const escapedName = escapeRegExp(nameWithoutExt);
+    const escapedFile = escapeRegExp(fileName);
+    const hasExport =
+      extLower === "ts"
+        ? new RegExp(
+            `^\\s*export\\s*\\*\\s*from\\s*['\"]\\./${escapedName}['\"]\\s*;?\\s*$`,
+            "m",
+          ).test(prev)
+        : new RegExp(
+            `^\\s*export\\s*\\{\\s*default\\s+as\\s+\\w+\\s*\\}\\s*from\\s*['\"]\\./${escapedFile}['\"]\\s*;?\\s*$`,
+            "m",
+          ).test(prev);
+
+    if (hasExport) {
+      return;
+    }
+
     if (prev.length && !prev.endsWith("\n")) {
       prev += "\n";
     }
   }
   fs.writeFileSync(indexPath, prev + line + "\n", "utf8");
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function debounce(fn: () => void, ms: number): () => void {
